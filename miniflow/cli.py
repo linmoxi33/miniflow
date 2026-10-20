@@ -623,6 +623,20 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+# 核心模块允许出现的模块名。它同时充当 3.9 的 stdlib 兜底白名单
+# （3.9 没有 sys.stdlib_module_names）。
+_STDLIB_FALLBACK = frozenset(
+    {
+        "argparse", "ast", "contextlib", "contextvars", "dataclasses", "datetime",
+        "functools", "hashlib", "importlib", "inspect", "json", "os", "pathlib",
+        "re", "shutil", "sqlite3", "subprocess", "sys", "threading", "time",
+        "traceback", "typing", "uuid", "textwrap", "collections", "itertools",
+        "math", "random", "shlex", "tempfile", "enum", "io", "signal", "platform",
+        "locale", "unicodedata", "logging", "warnings", "__future__",
+    }
+)
+
+
 def _third_party_imports() -> List[str]:
     """miniflow 的核心模块只允许标准库。这里做一次白名单检查。
 
@@ -631,14 +645,7 @@ def _third_party_imports() -> List[str]:
     """
     import ast
 
-    allowed = {
-        "argparse", "ast", "contextlib", "contextvars", "dataclasses", "datetime",
-        "functools", "hashlib", "importlib", "inspect", "json", "os", "pathlib",
-        "re", "shutil", "sqlite3", "subprocess", "sys", "threading", "time",
-        "traceback", "typing", "uuid", "textwrap", "collections", "itertools",
-        "math", "random", "shlex", "tempfile", "enum", "io", "signal", "platform",
-        "locale", "unicodedata", "logging", "warnings",
-    }
+    allowed = _STDLIB_FALLBACK
     found = set()
     package_dir = Path(__file__).resolve().parent
 
@@ -666,7 +673,16 @@ def _third_party_imports() -> List[str]:
 
 
 def _is_stdlib(name: str) -> bool:
-    return name in getattr(sys, "stdlib_module_names", set())
+    """判断是否标准库。
+
+    `sys.stdlib_module_names` 是 3.10 才有的，3.9 上拿不到。
+    3.9 走白名单兜底：白名单外的模块一律按「可能是第三方」上报，
+    宁可多提醒一句，也不要静默放过真的外部依赖。
+    """
+    names = getattr(sys, "stdlib_module_names", None)
+    if names is None:
+        return name in _STDLIB_FALLBACK
+    return name in names
 
 
 def cmd_clean(args: argparse.Namespace) -> int:

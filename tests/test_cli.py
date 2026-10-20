@@ -173,6 +173,17 @@ class CliTest(unittest.TestCase):
             remaining = json.loads(run_cli("runs", "--json", cwd=project.root).stdout)
             self.assertEqual(len(remaining), 1)
 
+    def test_stdlib_detection_covers_dunder_modules(self) -> None:
+        """3.9 没有 sys.stdlib_module_names，必须走白名单兜底。
+
+        `__future__` 就是当初在 3.9 上被误报成第三方依赖的那个。
+        """
+        from miniflow.cli import _is_stdlib
+
+        for name in ("__future__", "argparse", "sqlite3", "json", "pathlib", "typing"):
+            self.assertTrue(_is_stdlib(name), "%s 应被识别为标准库" % name)
+        self.assertFalse(_is_stdlib("requests"))
+
     def test_broken_file_is_reported_not_silently_skipped(self) -> None:
         with TempProject() as project:
             project.dag("hello.py", HELLO)
