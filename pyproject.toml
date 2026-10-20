@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "miniflow-dag"
+version = "0.1.0"
+description = "单进程、零第三方依赖的 DAG 调度器：Apache Airflow 最常用那 20% 的轻量替代"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Vespera (linmoxi33)" }]
+keywords = ["workflow", "scheduler", "dag", "cron", "orchestration", "airflow-alternative", "zero-dependency"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: System :: Monitoring",
+]
+dependencies = []
+
+[project.urls]
+Documentation = "https://github.com/linmoxi33/miniflow#readme"
+Source = "https://github.com/linmoxi33/miniflow"
+
+[project.scripts]
+miniflow = "miniflow.cli:main"
+
+[tool.setuptools]
+packages = ["miniflow"]
+include-package-data = false
+
+[tool.setuptools.package-data]
+miniflow = ["py.typed"]

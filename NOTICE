@@ -1,0 +1,29 @@
+miniflow
+Copyright 2026 Vespera (linmoxi33)
+
+This product is an independent, clean-room reimplementation of a small
+subset of workflow-orchestration concepts popularised by Apache Airflow.
+It was written from scratch for the purpose described in README.md and
+contains no source code copied from Apache Airflow.
+
+Inspiration and conceptual lineage
+----------------------------------
+Apache Airflow
+https://github.com/apache/airflow
+Copyright 2016-2026 The Apache Software Foundation
+Licensed under the Apache License, Version 2.0
+
+The terms "DAG", "task", "operator" and the general idea of declaring
+workflows as Python code are not claimed as original to this project.
+
+Trademarks
+----------
+"Apache", "Airflow" and the Apache feather logo are trademarks of the
+Apache Software Foundation. This project is not affiliated with, endorsed
+by, or sponsored by the Apache Software Foundation. The name "miniflow"
+is used descriptively to identify an independent, much smaller
+implementation; it is not a rebranding of Apache Airflow.
+
+Third-party components
+----------------------
+None. The runtime imports only Python standard-library modules.

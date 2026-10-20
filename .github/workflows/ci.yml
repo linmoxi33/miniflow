@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test / py${{ matrix.python }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.9", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: 环境信息
+        run: |
+          python -c "import sys, platform; print(sys.version); print(platform.platform())"
+
+      - name: 交付包自检（文件完整性 / 零依赖 / 许可证 / 编码）
+        run: python tools/verify_package.py
+
+      - name: 单元测试
+        run: python -m unittest discover -s tests -t . -v
+
+      - name: 冒烟（生成示例并真的跑一次）
+        run: python -m miniflow demo --directory ./_ci_demo
+
+  mutation:
+    name: 测试有效性（变异检查）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      # 往源码里注入已知缺陷，要求测试必须失败。
+      # 如果这里变绿，说明某些逻辑没有被测试保护。
+      - name: 注入缺陷并检查测试是否会失败
+        run: python tools/mutation_check.py

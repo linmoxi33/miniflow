@@ -1,0 +1,23 @@
+# miniflow 运行时产物
+.miniflow/
+.demo-test/
+.miniflow-demo/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+.venv/
+venv/
+
+# 示例输出
+examples/output/
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
