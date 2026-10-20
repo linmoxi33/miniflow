@@ -1,9 +1,13 @@
 # 所有文本文件统一 LF，避免跨平台换行差异污染 diff
 * text=auto eol=lf
 
-# Windows 批处理必须是 CRLF，否则部分 cmd.exe 版本解析异常
-*.cmd text eol=crlf
-*.bat text eol=crlf
+# Windows 批处理必须保持 CRLF。
+# 这里用 -text（不做任何规范化），而不是 text eol=crlf：
+# 后者会让 Git 以 LF 存储、只在 checkout 时转回 CRLF，
+# 而 GitHub 的 "Download ZIP" / raw 下载拿到的是存储形态（LF），
+# 用户双击就会失败。用 -text 保证仓库里存的就是 CRLF 原字节。
+*.cmd -text
+*.bat -text
 
 # 二进制
 *.png binary
