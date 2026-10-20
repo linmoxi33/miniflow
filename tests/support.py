@@ -17,13 +17,24 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+# Windows 控制台与 CI runner 的默认编码常是 cp1252 / GBK，
+# 中文测试名和失败信息会直接抛 UnicodeEncodeError。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+    except Exception:
+        pass
+
 
 def write_dag(directory: Path, name: str, source: str) -> Path:
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / name
     text = textwrap.dedent(source).lstrip("\n")
-    path.write_text(text, encoding="utf-8", newline="\n")
+    # 不用 Path.write_text(newline=...)：那是 3.10+ 才有的参数，
+    # 而 miniflow 声明支持 3.9。
+    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
     return path
 
 

@@ -29,6 +29,20 @@ from typing import Any, Dict, List, Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 
+# Windows 控制台与 CI runner 的默认编码常是 cp1252 / GBK，打印中文会抛
+# UnicodeEncodeError。所有面向人的输出统一走 UTF-8。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+    except Exception:
+        pass
+
+
+def write_lf(path: Path, text: str) -> None:
+    """按 LF 写文件。不用 Path.write_text(newline=)，那是 3.10+ 才有的参数。"""
+    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
+
 MUTATIONS: List[Dict[str, Any]] = [
     {
         "name": "cron: 日 与 星期 的 OR 语义改成 AND",
@@ -147,11 +161,11 @@ def main(argv: Optional[List[str]] = None) -> int:
             print("[%d/%d] SKIP  %s（替换未改变内容）" % (index, len(selected), item["name"]))
             continue
 
-        path.write_text(mutated, encoding="utf-8", newline="\n")
+        write_lf(path, mutated)
         try:
             result = run_tests(item["tests"])
         finally:
-            path.write_text(original, encoding="utf-8", newline="\n")
+            write_lf(path, original)
             restored = path.read_text(encoding="utf-8")
             if sha256(restored) != original_hash:
                 print("!! 恢复失败：%s 已被污染，请手动还原 !!" % path)

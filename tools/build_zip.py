@@ -19,6 +19,14 @@ from typing import List, Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 
+# Windows 控制台与 CI runner 的默认编码常是 cp1252 / GBK，打印中文会抛
+# UnicodeEncodeError。所有面向人的输出统一走 UTF-8。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+    except Exception:
+        pass
+
 EXCLUDE_DIR_NAMES = {
     "__pycache__",
     ".git",

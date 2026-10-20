@@ -195,7 +195,7 @@ class RunnerFailureTest(RunnerTestBase):
                     @task(timeout=1)
                     def slow():
                         import time
-                        time.sleep(10)
+                        time.sleep(20)
                         return "never"
                 """,
             )
@@ -205,9 +205,10 @@ class RunnerFailureTest(RunnerTestBase):
 
         self.assertEqual(result.state, STATE_FAILED)
         self.assertIn("MF007", result.tasks[0].error or "")
-        # 关键：真的被杀了，而不是老实等完 10 秒。
-        # 阈值取 8 秒：正常情况 1~2 秒，kill 失效时必然 >= 10 秒。
-        self.assertLess(elapsed, 8.0, "超时没有生效，实际耗时 %.1fs" % elapsed)
+        # 关键：真的被杀了，而不是老实等完 20 秒。
+        # 阈值取 12 秒，给 Windows runner 的进程冷启动留足余量；
+        # kill 一旦失效，elapsed 必然 >= 20 秒。
+        self.assertLess(elapsed, 12.0, "超时没有生效，实际耗时 %.1fs" % elapsed)
 
     def test_nonserializable_return_is_explained(self) -> None:
         with TempProject() as project:
