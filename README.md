@@ -2,6 +2,9 @@
 
 ![miniflow：单进程、零第三方依赖的 DAG 调度器](docs/assets/cover.png)
 
+[![CI](https://github.com/linmoxi33/miniflow/actions/workflows/ci.yml/badge.svg)](https://github.com/linmoxi33/miniflow/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/linmoxi33/miniflow)](https://github.com/linmoxi33/miniflow/releases)
+
 > 只想让 5 个脚本按顺序每天跑一次，不该先装 WSL2、起 5 个常驻进程、拉 130 个包。
 
 单进程、**零第三方依赖**的 DAG 调度器。用一个 `.py` 文件描述工作流，用一条命令跑起来。
@@ -257,17 +260,20 @@ cd miniflow
 python -m unittest discover -s tests -t . -v
 ```
 
-覆盖范围（68 个用例）：
+覆盖范围（72 个用例）：
 
 - cron 解析与推进：闰年、月末缺日、day-of-month 与 day-of-week 的 OR 语义、非法表达式
 - DAG 结构：拓扑序稳定性、环检测方向、参数绑定、重复 task_id、嵌套 DAG
 - 执行器：**真实子进程**跨进程传值、**真实重试**（用计数文件证明函数体执行了 3 次）、
-  **真实超时**（60 秒的任务 1 秒被杀）、失败阻断下游但不阻断无关分支、非 JSON 返回值
+  **真实超时**（20 秒的任务 1 秒被杀）、失败阻断下游但不阻断无关分支、非 JSON 返回值
 - 状态库：生命周期、尝试记录、调度游标、清理、损坏库报错
 - CLI 端到端：`init` 之后不改任何东西就能 `run` 成功、退出码、`--json`、日志读取
 
-测试有效性用变异检查验证过：故意注入 5 类缺陷（cron 语义、重试次数、失败传播、超时、环检测），
-测试全部检测到。脚本见 `tools/mutation_check.py`。
+测试有效性用变异检查验证过：故意注入 6 类缺陷（cron 语义、重试次数、超时参数、
+失败传播、跨任务传值、环检测），测试全部检测到。脚本见 `tools/mutation_check.py`。
+
+CI 在 Python 3.9 / 3.12 / 3.13 × Ubuntu / Windows 六组合上跑全套测试，
+另有一个独立的 job 专门跑变异检查。
 
 ---
 

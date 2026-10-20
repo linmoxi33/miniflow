@@ -55,7 +55,7 @@
 **工程**
 
 - 零第三方运行时依赖（`dependencies = []`），仅用标准库
-- 68 个 `unittest` 用例，含真实子进程、真实超时、真实重试
+- 72 个 `unittest` 用例，含真实子进程、真实超时、真实重试（原 68 个，补了 demo 与 3.9 兼容用例）
 - 变异敏感度检查脚本（`tools/mutation_check.py`），验证测试真的能抓到缺陷
 - 一键启动脚本（`start.cmd`，Windows）+ `miniflow demo` 子命令
 - 交付包自检（`tools/verify_package.py`）与打包脚本（`tools/build_zip.py`）
