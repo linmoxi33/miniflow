@@ -158,6 +158,35 @@ class CliTest(unittest.TestCase):
             self.assertIn("状态库", result.stdout)
             self.assertIn("0 个", result.stdout)  # 第三方依赖 0 个
 
+    def test_doctor_json_is_machine_parsable(self) -> None:
+        """doctor --json 必须能被 json.loads 解析，且字段齐全。"""
+        with TempProject() as project:
+            project.dag("hello.py", HELLO)
+            result = run_cli("doctor", "--json", cwd=project.root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertTrue(payload["ok"])
+            self.assertEqual(payload["failures"], 0)
+            self.assertIsInstance(payload["checks"], list)
+            names = {check["name"] for check in payload["checks"]}
+            self.assertIn("Python", names)
+            self.assertIn("状态库", names)
+            for check in payload["checks"]:
+                self.assertIn(check["level"], ("OK", "WARN", "FAIL"))
+
+    def test_doctor_json_reports_failure_and_exit_code(self) -> None:
+        """缺 DAG 目录时 doctor --json 仍要给出 FAIL 与对应退出码，而不是抛异常。"""
+        with TempProject() as project:
+            missing = project.root / "does-not-exist"
+            result = run_cli("--dags", str(missing), "doctor", "--json", cwd=project.root)
+            self.assertEqual(result.returncode, 5, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertFalse(payload["ok"])
+            self.assertGreaterEqual(payload["failures"], 1)
+            dags = [c for c in payload["checks"] if c["name"] == "DAG 目录"]
+            self.assertEqual(len(dags), 1)
+            self.assertEqual(dags[0]["level"], "FAIL")
+
     def test_runs_and_clean(self) -> None:
         with TempProject() as project:
             project.dag("hello.py", HELLO)

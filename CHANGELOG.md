@@ -3,6 +3,14 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [未发布]
+
+### 新增
+
+- `miniflow doctor --json`：环境体检输出可被机器解析的 JSON
+  （`ok` / `failures` / `warnings` / `checks[]`），退出码语义不变
+  （有 FAIL 仍返回 5），方便 CI 与 agent 直接消费。
+
 ## [0.1.0] - 2026-10-20
 
 首个可用版本。目标不是「替代 Airflow」，而是把单机小规模编排这件事

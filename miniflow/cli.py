@@ -605,13 +605,27 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     else:
         checks.append(("WARN", "终端编码", "%s（中文可能乱码，建议 chcp 65001）" % (encoding or "unknown")))
 
+    failures = [c for c in checks if c[0] == "FAIL"]
+    warnings = [c for c in checks if c[0] == "WARN"]
+
+    if getattr(args, "json", False):
+        payload = {
+            "version": __version__,
+            "ok": not failures,
+            "failures": len(failures),
+            "warnings": len(warnings),
+            "checks": [
+                {"level": level, "name": name, "detail": detail} for level, name, detail in checks
+            ],
+        }
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return 5 if failures else EXIT_OK
+
     print("miniflow %s 环境体检" % __version__)
     print()
     for level, name, detail in checks:
         print("  %-4s %-14s %s" % (level, name, detail))
 
-    failures = [c for c in checks if c[0] == "FAIL"]
-    warnings = [c for c in checks if c[0] == "WARN"]
     print()
     if failures:
         print("%d 项需要处理，其余可用。" % len(failures))
@@ -828,6 +842,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_cron.set_defaults(func=lambda a: cmd_cron_help(p_cron))
 
     p_doc = make("doctor", "检查环境、配置、状态库、DAG 目录")
+    p_doc.add_argument("--json", action="store_true", help="输出 JSON")
     p_doc.set_defaults(func=cmd_doctor)
 
     p_clean = make("clean", "清理旧的运行记录与日志")
