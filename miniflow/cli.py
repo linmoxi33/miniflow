@@ -315,20 +315,56 @@ def cmd_show(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _run_result_json(result: RunResult) -> Dict[str, Any]:
+    """把一次运行的完整结果序列化成稳定结构，供 CI / agent 消费。"""
+    return {
+        "run_id": result.run_id,
+        "dag_id": result.dag_id,
+        "state": result.state,
+        "ok": result.ok,
+        "duration_ms": result.duration_ms,
+        "started_at": result.started_at.isoformat(),
+        "finished_at": result.finished_at.isoformat(),
+        "counts": result.counts(),
+        "tasks": [
+            {
+                "task_id": task.task_id,
+                "state": task.state,
+                "attempts": task.attempts,
+                "duration_ms": task.duration_ms,
+                "log_path": task.log_path,
+                "error": task.error,
+            }
+            for task in result.tasks
+        ],
+    }
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     dags_dir, home, _ = resolve_paths(args)
     dag = get_dag(dags_dir, args.dag_id)
     store = open_store(home)
     params = _parse_params(args.param)
+    as_json = bool(getattr(args, "json", False))
 
     if args.dry_run:
         order = dag.ancestors(args.task) if args.task else dag.topological_order()
+        if as_json:
+            print(
+                json.dumps(
+                    {"dag_id": dag.dag_id, "dry_run": True, "order": order},
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+            return EXIT_OK
         print("将按以下顺序执行（dry-run，不真的跑）：")
         for index, task_id in enumerate(order, 1):
             print("  %2d. %s" % (index, task_id))
         return EXIT_OK
 
-    print("运行 %s" % dag.dag_id)
+    if not as_json:
+        print("运行 %s" % dag.dag_id)
     result = run_dag(
         dag,
         store,
@@ -336,8 +372,13 @@ def cmd_run(args: argparse.Namespace) -> int:
         params=params,
         only_task=args.task,
         verbose=args.verbose,
-        echo=True,
+        echo=not as_json,
     )
+
+    if as_json:
+        # stdout 只放 JSON：重定向到文件后必须能被 json.load 直接解析。
+        print(json.dumps(_run_result_json(result), ensure_ascii=False, indent=2))
+        return EXIT_OK if result.ok else EXIT_TASK
 
     print()
     _print_run_summary(result, home)
@@ -812,6 +853,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument("--task", help="只跑到这个任务（含它的上游）")
     p_run.add_argument("--param", action="append", help="运行时参数 key=value，可重复")
     p_run.add_argument("--dry-run", action="store_true", help="只打印执行顺序，不真的跑")
+    p_run.add_argument(
+        "--json", action="store_true", help="把运行结果（含每个任务状态）输出为 JSON"
+    )
     p_run.set_defaults(func=cmd_run)
 
     p_runs = make("runs", "查看运行历史")

@@ -7,6 +7,10 @@
 
 ### 新增
 
+- `miniflow run --json`：把一次运行的结果（`run_id` / `state` / `ok` /
+  `duration_ms` / `counts` / 每个任务的 `state`、`attempts`、`log_path`、`error`）
+  输出为单个 JSON 对象；stdout 不再混入人类可读文本，退出码语义不变。
+  `--dry-run --json` 输出 `{dag_id, dry_run, order}`。
 - `miniflow doctor --json`：环境体检输出可被机器解析的 JSON
   （`ok` / `failures` / `warnings` / `checks[]`），退出码语义不变
   （有 FAIL 仍返回 5），方便 CI 与 agent 直接消费。

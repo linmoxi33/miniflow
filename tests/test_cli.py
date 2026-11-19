@@ -233,3 +233,42 @@ class CliTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RunJsonContractTest(unittest.TestCase):
+    """run --json 的机器契约：stdout 只能是 JSON，退出码语义不变。"""
+
+    def test_dry_run_json_is_order_only(self) -> None:
+        with TempProject() as project:
+            project.dag("hello.py", HELLO)
+            result = run_cli("run", "hello", "--dry-run", "--json", cwd=project.root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["dag_id"], "hello")
+            self.assertTrue(payload["dry_run"])
+            self.assertEqual(payload["order"], ["fetch", "report"])
+
+    def test_run_json_success_exit_zero(self) -> None:
+        with TempProject() as project:
+            project.dag("hello.py", HELLO)
+            result = run_cli("run", "hello", "--json", cwd=project.root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)  # stdout 里不能混人类可读文本
+            self.assertTrue(payload["ok"])
+            self.assertEqual(payload["state"], "success")
+            self.assertEqual(payload["counts"]["success"], 2)
+            self.assertEqual(
+                [task["task_id"] for task in payload["tasks"]], ["fetch", "report"]
+            )
+            self.assertTrue(all(task["state"] == "success" for task in payload["tasks"]))
+
+    def test_run_json_failure_keeps_exit_four(self) -> None:
+        with TempProject() as project:
+            project.dag("broken.py", BROKEN)
+            result = run_cli("run", "broken", "--json", cwd=project.root)
+            self.assertEqual(result.returncode, 4, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["state"], "failed")
+            self.assertEqual(payload["counts"]["failed"], 1)
+            self.assertIn("RuntimeError", payload["tasks"][0]["error"])

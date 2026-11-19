@@ -151,7 +151,8 @@ miniflow run daily_report --param rows=120
 | `miniflow show <dag_id>` | 看依赖图、下次触发时间、需要 `--param` 的任务 |
 | `miniflow run <dag_id>` | 跑一次 |
 | `miniflow run <dag_id> --task <id>` | 只跑到某个任务（含它的上游） |
-| `miniflow run <dag_id> --dry-run` | 只打印执行顺序 |
+| `miniflow run <dag_id> --dry-run` | 只打印执行顺序（`--json` 输出 `{dag_id, dry_run, order}`） |
+| `miniflow run <dag_id> --json` | 跑一次并输出机器可读结果（运行态、每个任务状态/尝试次数/日志路径） |
 | `miniflow runs` | 运行历史 |
 | `miniflow logs <run_id> [--task <id>]` | 看任务日志路径 / 直接打印日志 |
 | `miniflow schedule` | 常驻调度循环（Ctrl+C 退出） |
@@ -246,6 +247,25 @@ miniflow 是**有意的窄工具**。以下能力它没有，也不打算有：
 | 3 | DAG 校验失败（成环、参数绑定、cron 非法、文件加载失败） |
 | 4 | DAG 结构没问题，任务本身跑失败 |
 | 5 | 环境/配置/状态库问题 |
+
+`run --json` 在 stdout 只输出一个 JSON 对象，退出码语义与人类可读模式完全一致
+（成功 0 / 任务失败 4 / 用法或 DAG 错误 2、3）。CI 里可以直接取
+`counts.failed` 与每个任务的 `error`：
+
+```json
+{
+  "run_id": "hello__20261119T030102",
+  "dag_id": "hello",
+  "state": "success",
+  "ok": true,
+  "duration_ms": 431,
+  "counts": {"success": 2, "failed": 0, "upstream_failed": 0},
+  "tasks": [
+    {"task_id": "fetch", "state": "success", "attempts": 1, "duration_ms": 181,
+     "log_path": ".miniflow/logs/.../fetch.log", "error": null}
+  ]
+}
+```
 
 完整错误码表见 [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md)。
 
